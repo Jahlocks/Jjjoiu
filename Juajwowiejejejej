@@ -1,0 +1,250 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = game.Workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+local SoundService = game:GetService("SoundService")
+
+local function createGui()
+    local existingGui = LocalPlayer.PlayerGui:FindFirstChild("TapBoundScreenGui")
+    if existingGui then
+        existingGui:Destroy()
+    end
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "TapBoundScreenGui"
+    screenGui.Parent = LocalPlayer.PlayerGui
+
+    local button = Instance.new("TextButton")
+    button.Name = "LockButton"
+    button.Size = UDim2.new(0, 60, 0, 60)
+    button.Position = UDim2.new(0.15, 0, 0.25, 0)
+    button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 14
+    button.Text = "Camlock off"
+    button.Font = Enum.Font.SourceSans
+    button.BorderSizePixel = 0
+    button.BackgroundTransparency = 0
+    button.Parent = screenGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = button
+
+    local predictionBox = Instance.new("TextBox")
+    predictionBox.Name = "PredictionBox"
+    predictionBox.Size = UDim2.new(0, 100, 0, 30)
+    predictionBox.Position = UDim2.new(0.01, 0, 0, 10)
+    predictionBox.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    predictionBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    predictionBox.TextSize = 14
+    predictionBox.Text = tostring(LocalPlayer:GetAttribute("PredictionFactor") or "Prediction")
+    predictionBox.Font = Enum.Font.SourceSans
+    predictionBox.BorderSizePixel = 1
+    predictionBox.BorderColor3 = Color3.fromRGB(139, 0, 0)
+    predictionBox.Parent = screenGui
+
+    local applyButton = Instance.new("TextButton")
+    applyButton.Name = "ApplyButton"
+    applyButton.Size = UDim2.new(0, 60, 0, 30)
+    applyButton.Position = UDim2.new(0.12, 0, 0, 10)
+    applyButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    applyButton.TextColor3 = Color3.fromRGB(139, 0, 0)
+    applyButton.TextSize = 14
+    applyButton.Text = "Apply"
+    applyButton.Font = Enum.Font.SourceSans
+    applyButton.BorderSizePixel = 1
+    applyButton.BorderColor3 = Color3.fromRGB(139, 0, 0)
+    applyButton.Parent = screenGui
+
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Name = "ToggleButton"
+    toggleButton.Size = UDim2.new(0, 20, 0, 20)
+    toggleButton.Position = UDim2.new(1, -30, 0, 10)
+    toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleButton.TextSize = 14
+    toggleButton.Text = "+"
+    toggleButton.Font = Enum.Font.SourceSans
+    toggleButton.BorderSizePixel = 1
+    toggleButton.BorderColor3 = Color3.fromRGB(139, 0, 0)
+    toggleButton.Parent = screenGui
+
+    local function toggleVisibility()
+        if predictionBox.Visible then
+            predictionBox.Visible = false
+            applyButton.Visible = false
+            toggleButton.Text = "+"
+            toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        else
+            predictionBox.Visible = true
+            applyButton.Visible = true
+            toggleButton.Text = "-"
+            toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        end
+    end
+
+    toggleButton.MouseButton1Click:Connect(toggleVisibility)
+
+    local hitSound = Instance.new("Sound")
+    hitSound.SoundId = "rbxassetid://18595601181"
+    hitSound.Volume = 1
+    hitSound.Parent = screenGui
+
+    local function createNotificationFrame()
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0, 250, 0, 60)
+        frame.Position = UDim2.new(1, 50, 1, 50)
+        frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        frame.BorderSizePixel = 0
+        frame.Visible = false
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -10, 1, -10)
+        label.Position = UDim2.new(0, 5, 0, 5)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.TextSize = 16
+        label.TextWrapped = true
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.TextYAlignment = Enum.TextYAlignment.Center
+        label.Font = Enum.Font.SourceSans
+        label.Parent = frame
+
+        local underline = Instance.new("Frame")
+        underline.Size = UDim2.new(1, 0, 0, 2)
+        underline.Position = UDim2.new(0, 0, 0, 0)
+        underline.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        underline.BorderSizePixel = 0
+        underline.Parent = frame
+
+        local smallLabel = Instance.new("TextLabel")
+        smallLabel.Size = UDim2.new(0, 100, 0, 20)
+        smallLabel.Position = UDim2.new(0, 5, 0, 5)
+        smallLabel.BackgroundTransparency = 1
+        smallLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        smallLabel.TextSize = 12
+        smallLabel.Text = "TapBound.cc"
+        smallLabel.Font = Enum.Font.SourceSans
+        smallLabel.TextXAlignment = Enum.TextXAlignment.Left
+        smallLabel.TextYAlignment = Enum.TextYAlignment.Center
+        smallLabel.Parent = frame
+
+        return frame, label
+    end
+
+    local lockNotification, lockNotificationLabel = createNotificationFrame()
+    lockNotification.Name = "LockNotification"
+    lockNotification.Parent = screenGui
+
+    local unlockNotification, unlockNotificationLabel = createNotificationFrame()
+    unlockNotification.Name = "UnlockNotification"
+    unlockNotification.Parent = screenGui
+
+    local isLocked = false
+    local lockedPlayer = nil
+    local predictionFactor = tonumber(LocalPlayer:GetAttribute("PredictionFactor")) or 0.2
+
+    local function showNotification(notificationFrame, label, messageText)
+        if lockNotification.Visible then
+            lockNotification.Visible = false
+        end
+        if unlockNotification.Visible then
+            unlockNotification.Visible = false
+        end
+
+        notificationFrame.Visible = true
+        notificationFrame.Position = UDim2.new(1, 50, 1, 50)
+        label.Text = messageText
+        hitSound:Play()
+
+        notificationFrame:TweenPosition(UDim2.new(1, -260, 1, -70), "Out", "Quad", 0.5, true, function()
+            wait(2)
+            notificationFrame:TweenPosition(UDim2.new(1, 50, 1, 50), "In", "Quad", 0.5, true, function()
+                notificationFrame.Visible = false
+            end)
+        end)
+    end
+
+    local function getPlayerInView()
+        local cameraPosition = Camera.CFrame.Position
+        local playersInView = {}
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local character = player.Character
+                local rootPart = character.HumanoidRootPart
+                local characterPosition = rootPart.Position
+                local screenPosition, onScreen = Camera:WorldToViewportPoint(characterPosition)
+
+                if onScreen then
+                    local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
+                    table.insert(playersInView, {player = player, distance = distance})
+                end
+            end
+        end
+
+        if #playersInView > 0 then
+            table.sort(playersInView, function(a, b) return a.distance < b.distance end)
+            return playersInView[1].player
+        end
+
+        return nil
+    end
+
+    local function updateCamera()
+        if isLocked and lockedPlayer and lockedPlayer.Character and lockedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local targetPosition = lockedPlayer.Character.HumanoidRootPart.Position
+            local cameraPosition = Camera.CFrame.Position
+
+            local velocity = lockedPlayer.Character:FindFirstChildOfClass("Humanoid") and lockedPlayer.Character:FindFirstChildOfClass("Humanoid").RootPart.Velocity or Vector3.new()
+            local predictedPosition = targetPosition + velocity * predictionFactor
+
+            local ray = Ray.new(cameraPosition, predictedPosition - cameraPosition)
+            local hitPart, hitPoint = workspace:FindPartOnRay(ray, LocalPlayer.Character)
+
+            if hitPart then
+                predictedPosition = cameraPosition + (predictedPosition - cameraPosition).Unit * (hitPoint - cameraPosition).Magnitude
+            end
+
+            Camera.CFrame = CFrame.new(cameraPosition, predictedPosition)
+        end
+    end
+
+    button.MouseButton1Click:Connect(function()
+        isLocked = not isLocked
+        if isLocked then
+            button.Text = "Camlock on"
+            lockedPlayer = getPlayerInView()
+            if lockedPlayer then
+                showNotification(lockNotification, lockNotificationLabel, "Camlock Activated")
+            end
+        else
+            button.Text = "Camlock off"
+            lockedPlayer = nil
+            showNotification(unlockNotification, unlockNotificationLabel, "Camlock Deactivated")
+        end
+    end)
+
+    applyButton.MouseButton1Click:Connect(function()
+        local newPredictionFactor = tonumber(predictionBox.Text)
+        if newPredictionFactor then
+            predictionFactor = newPredictionFactor
+            LocalPlayer:SetAttribute("PredictionFactor", newPredictionFactor)
+        else
+            print("Invalid prediction factor value")
+        end
+    end)
+
+    RunService.RenderStepped:Connect(function()
+        if isLocked then
+            updateCamera()
+        end
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(createGui)
+
+if LocalPlayer.Character then
+    createGui()
+end
